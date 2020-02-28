@@ -1,0 +1,209 @@
+%%
+%% The first command in your LaTeX source must be the \documentclass command.
+\documentclass[sigchi, nonacm]{acmart}
+
+%% \BibTeX command to typeset BibTeX logo in the docs
+\AtBeginDocument{%
+  \providecommand\BibTeX{{%
+    \normalfont B\kern-0.5em{\scshape i\kern-0.25em b}\kern-0.8em\TeX}}}
+
+%% Rights management information.  This information is sent to you
+\setcopyright{acmcopyright}
+\copyrightyear{2018}
+\acmYear{2018}
+\acmDOI{10.1145/1122445.1122456}
+
+%% These commands are for a PROCEEDINGS abstract or paper.
+\acmConference[Woodstock '18]{Woodstock '18: ACM Symposium on Neural
+  Gaze Detection}{June 03--05, 2018}{Woodstock, NY}
+\acmBooktitle{Woodstock '18: ACM Symposium on Neural Gaze Detection,
+  June 03--05, 2018, Woodstock, NY}
+\acmPrice{15.00}
+\acmISBN{978-1-4503-XXXX-X/18/06}
+
+\usepackage{url}
+
+
+%%
+\begin{document}
+\title{Handling Various Units and Unit Representations Across Multiple Data Sources}
+\author{Mihran Simonian - 12386294}
+\email{mihran.simonian@gmail.com}
+\affiliation{%
+  \institution{University of Amsterdam}
+}
+
+%%
+%% The abstract is a short summary of the work to be presented in the
+%% article.
+\begin{abstract}
+    While the manufacturing industry attempts to implement open data communication over the whole supply chain, existing computer (ERP) systems are maintained in-place at individual manufacturing plants. The wide range of systems, together with the wide range of sensors used to measure manufacturing parameters, create multiple challenges. As supply chains operate and procure more cross-boarder than ever before, there is a growing need for a standardized units of measurements and other key parameters (such as ordering quantities). However, computer systems are hardly designed to cope with units, let alone when introducing multiple units. In this paper I propose a system to unify these units and will go into details of issues that might arise when executing the proposed procedures on a larger cluster of computers.
+\end{abstract}
+
+%%
+\maketitle
+
+
+\section{Introduction}
+The manufacturing industry is currently going through a major development, described as 'Smart Industry 4.0'\cite{lee2014service}. By using computers, big data and the implementation of various sensors, manufacturers attempt to optimize their production flows and lower costs, whilst increasing reliability and optimize production speeds.
+
+Simultaneously OEM producers (manufacturers whom combine loose parts to assemble one product) attempt to optimize their supply chain, by combining the data streams of various suppliers attempt to optimize it's supply chain, in order to avoid production halts when a disruption occurs in the supply chain, as production halts are very costly and can create significant delivery delays to the end-users. 
+
+As Haverkort stated\cite{haverkort2017smart};
+\begin{quote}
+    In many countries around the globe, research and innovation programs are starting that address this field, thereby addressing a wide variety of issues, including improved supply-chain management techniques, utilizing data acquired locally and globally.
+\end{quote}
+
+\subsection{Global Organization}
+Due to the fact that production facilities can possibly be spread all over the world\footnote{\url{https://www.asml.com/en/company/sustainability/responsible-supply-chain}}, there is an increasing issue that is rising but currently less highlighted as computer systems are currently not necessarily designed to cope with multiple measurement units\cite{foster2013quantities}.
+
+\subsection{Physical Units}
+Differences in measurement units used in manufacturing industry are visible on all type of fields, yet temperatures, forces, distances, volume and weight are the main types (we can derive most others from these types). To illustrate the magnitude of the issue, in 1999 NASA lost one of it's satellites orbiting the planet Mars, due to a programming error in which an Imperial unit was implemented but the Metric unit had to be used instead\footnote{\url{https://mars.jpl.nasa.gov/msp98/news/mco991110.html}}\cite{NASA}. Surely manufacturing a car or assembling parts for a lithography machine\footnote{\url{https://www.asml.com/en/technology}} will not result in the same financial (and social) consequences, but it is an indication that we should not discard the issue and it's potential consequences.
+
+\subsection{Other Units Used in Supply Chain}
+As we are using the case of the supply chains of manufacturers, we should not disregard the existence of other units than technical or physical units, which are important but more from a engineering perspective. Supply chain planning revolves mainly around allocating resources efficiently. Various researches \cite{graves1998dynamic}\cite{sarkar2016supply} have focused on issues such as:
+
+\begin{itemize}
+    \item{Work shifts with various hourly rates}
+    \item{Production times}
+    \item{Ordering quantities}
+\end{itemize}
+
+The main point to take from this is that products or units can be reflected differently in various systems; when we order 'a box of product screws' from company A instead of company B, the actual quantity included inside the box can differ. An important point to address when integrating supply chains, as ordering items is one of the key tasks in supply chain management.
+
+\subsubsection{Different Representation of Units Across Variables}
+From personal experience, the ERP system my employer utilized (Baan IV \footnote{\url{https://www.xibis.nl/producten/baanivenv}}) contained different representations of the same unit for different parameters, such as with days and package units. As an example; delivery times would be represented in calendar days whilst production times would be represented in work days. When integrating the various ERP systems, such differences cannot be ignored and have to be unified as well.
+
+\section{Related Work}
+The issue of using multiple sensors and vastly storing these in computer systems has already been highlighted in previous work \cite{waltz1990multisensor}, in which data variable types were highlighted as possible sources of conflict. This was in 1990, however in 2013 there was still reason enough for concern, as \cite{foster2013quantities} described in his paper.
+
+Co-currently the Dutch research institute TNO is currently developing (test version live since January 2020) a communication protocol (labelled as SCSN) in cooperation with various manufacturers\footnote{\url{https://smartindustry.nl/fieldlabs/8-smart-connected-supplier-network}}\footnote{\url{https://www.brainportindustries.com/nl/berichten/maakindustrie-aan-de-slag-met-digitalisering}}. This communication standard enables manufacturers to share various production parameters (data) in an easy manner, whilst the manufactures remain to be able to use their own ERP\footnote{\url{https://en.wikipedia.org/wiki/Enterprise_resource_planning}} system, which is preferred by manufacturers due to various reasons (legacy purposes, proprietary software, vendor lock-ins, etc.). The SCSN protocol is introduced as it assures that companies do not need to 'give up' their own dedicated ERP systems, whilst being enabled to share data with other manufacturers (cross ERP). Thus, systems might communicate via live data connections or by means of backlogs, where on a daily night backlogs are loaded into systems (by using csv file containers for instance).
+Interviews conducted with the research department of TNO revealed that the main issue currently faced by these organizations, is scaling up the system and determining the level of information sharing for an optimum improvement of the supply chain. A strong point of attention however remains the correct implementation of units inside the data sharing facility as not only the units themselves can differ, but the way that the same unit is used in a system can also differ.
+
+
+\subsection{Libraries}
+    \subsubsection{Unit Conversion} Unit conversion is not a new thing, even the basic Windows calculator will be able to convert units. Multiple libraries for Python have been written, such as PintPy\footnote{https://pint.readthedocs.io/en/0.11} or the 'unit-converter' from PyPi\footnote{https://pypi.org/project/unit-converter}. These libraries allow users to convert units, but only when the actual number is accompanied by a certain subset of information; the information needs to be supplied in a certain way. Thus this means, we need pre-processing steps. Not only does this create an unnecessary influx of data to be transmitted between nodes, but it also requires additional computation time to be used, burdening the system potentially unnecessary.
+
+\subsubsection{Other used units}
+To lessor extent Workdays are also a known issue in computer management. Excel offers the function 'workday'\footnote{https://support.office.com/en-us/article/workday-function-f764a5b7-05fc-4494-9486-60d494efbf33}, for example. For Python there is a library for 'workdays' as well\footnote{https://pypi.org/project/workdays}, just as the package 'businesshours'\footnote{https://pypi.org/project/BusinessHours}.
+
+\subsection{Current Gap in the Market}
+The currently available methods allow for either standard units to be converted, e.g.; kilograms to grams, Fahrenheit to Celsius and so on. These are physical units and are important, but as mentioned previously, these are not the only units that are being used within manufacturing and supply chain management.
+The 'workday' and 'businesshours' libraries as currently available on their part do not allow to convert units. 
+
+The aim of this research therefore is to provide a possibility in which these two important items can be combined into one, thus providing an incremental improvement for the overall research of combining the various ERP systems.
+
+
+
+\section{Research}
+The framework of this research is having multiple ERP systems combined, as the SCSN network is attempting to achieve.
+
+\subsection{Aim}
+This research is aimed to highlight the importance of identifying the need to convert a wide range of varied units, represented in various data sources. By performing a performance test we will be evaluating the impact of combining various units into a single large tabulation.
+
+\subsection{Research Question}
+During this research I would like to answer the following question:
+\begin{itemize}
+    \item{How do we combine various units and translate them into a single unit representations into a large datacluster using Python libraries?}
+\end{itemize}
+
+With sub questions:
+\begin{itemize}
+	\item{Which type of data variables do we want to align in the current scope?}
+    \item{Which possible inputs can we expect?}
+    \item{Which problems might arise during the scale-up of the system?}
+\end{itemize}
+
+\begin{itemize}
+    \item{How should we pre-clean the data entries?}
+\end{itemize}
+
+
+
+
+
+
+
+\section{Method}
+By automating the processing of data entries, we can minimize the human efforts required (and all issues that might arise from this). In order to automate we need to set up a 'translation list' of conversions between Imperial (US) and Metric (SI) units. Furthermore we need to assure that users provide an input for the translation program to understand which unit is used, in order to translate it to the correct conversion.
+
+By storing all the inputs into a standard (metric by preference) system, we are assured that all information as stored into this system follows one standard unit system. Output conversions must than occur in case this is needed.
+
+Furthermore I would like to discuss how the scaling up of this system would occur and which issues might arise. For instance, what parts of this data process can we perform on a cluster of computers and which not?
+
+Lastly I would also like to test whether more procedures can be written to assure that data input is separated accordingly (string conversions, data variable type conversions). This might lead to an extensive exercise, which in itself can be a complete paper so this one I would like to keep for the last part and see more as a bonus section if there is sufficient time left.
+
+\subsection{Data Sources}
+For this research I will use a self-generated dataset upon which the introduced method will be tested.
+
+\subsection{Unit Types}
+For the current research I will solely focus on the application of the following units:
+\begin{itemize}
+    \item 
+\end{itemize}
+
+
+
+\section{Upscaling}
+
+%\subsection{Adding New Manufacturers}
+%interviews with ERP suppliers
+%Manufacturers currently need to inform how they use it
+%alignment of variables needs to be done
+%specific for each client
+%bad because takes time
+%good because it assures clean alignment between intended (intended!) variable usage from all ERP systems
+
+%\subsection{Synchronizing Data}
+%When combining various data sources we will run into synchronicity issues. A master has to control all versions, delays and what do we do when the master dies? It's a single node
+
+%\subsection{Assuring Data Integrity}
+%Assure that values are actually what they should be
+
+\section{Future Work}
+%Comparison of US and UK Imperial units
+%% https://en.wikipedia.org/wiki/Comparison_of_the_imperial_and_US_customary_measurement_systems
+
+\section{Discussion}
+
+
+%%
+%% The acknowledgments section is defined using the "acks" environment
+%% (and NOT an unnumbered section). This ensures the proper
+%% identification of the section in the article metadata, and the
+%% consistent spelling of the heading.
+\begin{acks}
+To Hannes Mühlheisen, for the fun and joy during the lectures and for setting up this exercise, together with Cristian Rodriguez Rivero and Shuo Chen.
+\end{acks}
+
+%%
+%% The next two lines define the bibliography style to be used, and 
+%% the bibliography file.
+\bibliographystyle{ACM-Reference-Format}
+\bibliography{sample-base}
+
+
+%%
+%% If your work has an appendix, this is the place to put it.
+\appendix
+
+\end{document}
+\endinput
+%%
+%% End of file `sample-sigchi.tex'.
+
+
+
+1.	What is the problem?
+2.	Why is it interesting and important?
+3.	Why is it hard? (E.g., why do naive approaches fail?)
+4.	Why hasn't it been solved before? (Or, what's wrong with previous proposed solutions? How does mine differ?)
+5.	What are the key components of my approach and results? Also include any specific limitations.
+Also include references to and short description of related work as part of the first chapter. 
+
+
+General criteria:
+•	If you have received feedback from your TA, please make sure you incorporate it accordingly.
+•	Make sure your paper has a concise yet descriptive title.
+•	Make sure your text is logically coherent and arguments follow a clear line. A good way to achieve this is to write down the argument chain first and then turn each link into a sentence of paragraph. 
+•	Make sure you clearly describe the Big Data angle of your approach, which V you address, how traditional approaches fail to address the issue etc.
