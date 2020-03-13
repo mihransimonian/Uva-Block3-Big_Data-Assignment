@@ -1,6 +1,8 @@
 %%
 %% The first command in your LaTeX source must be the \documentclass command.
+%\documentclass[sigconf]{acmart} 
 \documentclass[sigchi, nonacm]{acmart}
+
 
 %% \BibTeX command to typeset BibTeX logo in the docs
 \AtBeginDocument{%
@@ -21,12 +23,20 @@
 \acmPrice{15.00}
 \acmISBN{978-1-4503-XXXX-X/18/06}
 
-\usepackage{url}
+%% Incorporate packages
+% coding
+\usepackage[linesnumbered, ruled,vlined]{algorithm2e}
+\usepackage{algpseudocode} % to make pseudo code
+\usepackage{minted} % python code
 
+% rest
+\usepackage{appendix} % for the appendix letters
+\usepackage{url} % to make urls easy
+\usepackage{hyperref} %Je moet er op letten dat je het pakket laadt als laatste van alle geladen pakketten maar nog voor de andere instellingen. Als je dit pakket laadt, dan veranderen alle referenties in hyperlinks. Ook de inhoudstabel en lijsten van figuren en tabellen worden vol met links geplaatst. %Voor externe links gebruik je best het \url-commando.
 
 %%
 \begin{document}
-\title{Handling Various Units and Unit Representations Across Multiple Data Sources}
+\title{Handling Different Measurement Units Across Multiple Data Sources Using CSV Files}
 \author{Mihran Simonian - 12386294}
 \email{mihran.simonian@gmail.com}
 \affiliation{%
@@ -37,8 +47,14 @@
 %% The abstract is a short summary of the work to be presented in the
 %% article.
 \begin{abstract}
-    While the manufacturing industry attempts to implement open data communication over the whole supply chain, existing computer (ERP) systems are maintained in-place at individual manufacturing plants. The wide range of systems, together with the wide range of sensors used to measure manufacturing parameters, create multiple challenges. As supply chains operate and procure more cross-boarder than ever before, there is a growing need for a standardized units of measurements and other key parameters (such as ordering quantities). However, computer systems are hardly designed to cope with units, let alone when introducing multiple units. In this paper I propose a system to unify these units and will go into details of issues that might arise when executing the proposed procedures on a larger cluster of computers.
+    While the manufacturing industry attempts to implement open data communication over the whole supply chain, existing computer (ERP) systems are maintained in-place at individual manufacturing plants. The wide range of systems, together with the wide range of sensors used to measure manufacturing parameters, create multiple challenges. As supply chains operate and procure more cross-boarder than ever before, there is a growing need for a standardized units of measurements and other key parameters (such as ordering quantities). However, computer systems are hardly designed to cope with units, let alone when introducing multiple units. 
+    In this paper I will analyze the existing methods through the means of testing and will design and propose a system to unify these units.
 \end{abstract}
+
+%%
+%% Keywords. The author(s) should pick words that accurately describe
+%% the work being presented. Separate the keywords with commas.
+\keywords{Supply chain, units, convert, databases}
 
 %%
 \maketitle
@@ -49,122 +65,372 @@ The manufacturing industry is currently going through a major development, descr
 
 Simultaneously OEM producers (manufacturers whom combine loose parts to assemble one product) attempt to optimize their supply chain, by combining the data streams of various suppliers attempt to optimize it's supply chain, in order to avoid production halts when a disruption occurs in the supply chain, as production halts are very costly and can create significant delivery delays to the end-users. 
 
-As Haverkort stated\cite{haverkort2017smart};
-\begin{quote}
-    In many countries around the globe, research and innovation programs are starting that address this field, thereby addressing a wide variety of issues, including improved supply-chain management techniques, utilizing data acquired locally and globally.
-\end{quote}
+As measurement units are different across countries, unit conversion is required and must be implemented before automatic ordering can take place. However, despite many efforts, the various current methods all lack in one aspect or another, as elaborated on in the appendix to this paper.
 
 \subsection{Global Organization}
-Due to the fact that production facilities can possibly be spread all over the world\footnote{\url{https://www.asml.com/en/company/sustainability/responsible-supply-chain}}, there is an increasing issue that is rising but currently less highlighted as computer systems are currently not necessarily designed to cope with multiple measurement units\cite{foster2013quantities}.
+Countries around the world start with research and innovation programs, in which supply-chain management techniques are attempted to be improved using data acquired locally and globally\cite{haverkort2017smart}.
+
+Due to the fact that production facilities can possibly be spread all over the world\footnote{\raggedright\url{https://www.asml.com/en/company/sustainability/responsible-supply-chain}}, there is an increasing issue that is rising but currently less highlighted as computer systems are currently not necessarily designed to cope with multiple measurement units\cite{foster2013quantities}.
 
 \subsection{Physical Units}
-Differences in measurement units used in manufacturing industry are visible on all type of fields, yet temperatures, forces, distances, volume and weight are the main types (we can derive most others from these types). To illustrate the magnitude of the issue, in 1999 NASA lost one of it's satellites orbiting the planet Mars, due to a programming error in which an Imperial unit was implemented but the Metric unit had to be used instead\footnote{\url{https://mars.jpl.nasa.gov/msp98/news/mco991110.html}}\cite{NASA}. Surely manufacturing a car or assembling parts for a lithography machine\footnote{\url{https://www.asml.com/en/technology}} will not result in the same financial (and social) consequences, but it is an indication that we should not discard the issue and it's potential consequences.
+Differences in measurement units used in manufacturing industry are visible on all type of fields, yet temperatures, forces, distances, volume and weight are the main types (we can derive most others from these types). To illustrate the magnitude of the issue; in 1999 NASA lost one of it's satellites orbiting the planet Mars, due to a programming error in which a US Customary unit was implemented but the Metric unit had to be used instead\footnote{\raggedright\url{https://mars.jpl.nasa.gov/msp98/news/mco991110.html}}\cite{NASA}. Surely manufacturing a car or assembling parts for a lithography machine\footnote{\raggedright\url{https://www.asml.com/en/technology}} will not result in the same financial (and social) consequences, but it is an indication that we should not discard the issue and it's potential consequences.
 
-\subsection{Other Units Used in Supply Chain}
-As we are using the case of the supply chains of manufacturers, we should not disregard the existence of other units than technical or physical units, which are important but more from a engineering perspective. Supply chain planning revolves mainly around allocating resources efficiently. Various researches \cite{graves1998dynamic}\cite{sarkar2016supply} have focused on issues such as:
-
-\begin{itemize}
-    \item{Work shifts with various hourly rates}
-    \item{Production times}
-    \item{Ordering quantities}
-\end{itemize}
-
-The main point to take from this is that products or units can be reflected differently in various systems; when we order 'a box of product screws' from company A instead of company B, the actual quantity included inside the box can differ. An important point to address when integrating supply chains, as ordering items is one of the key tasks in supply chain management.
-
-\subsubsection{Different Representation of Units Across Variables}
-From personal experience, the ERP system my employer utilized (Baan IV \footnote{\url{https://www.xibis.nl/producten/baanivenv}}) contained different representations of the same unit for different parameters, such as with days and package units. As an example; delivery times would be represented in calendar days whilst production times would be represented in work days. When integrating the various ERP systems, such differences cannot be ignored and have to be unified as well.
 
 \section{Related Work}
+\subsection{Unit Conversion}
 The issue of using multiple sensors and vastly storing these in computer systems has already been highlighted in previous work \cite{waltz1990multisensor}, in which data variable types were highlighted as possible sources of conflict. This was in 1990, however in 2013 there was still reason enough for concern, as \cite{foster2013quantities} described in his paper.
 
-Co-currently the Dutch research institute TNO is currently developing (test version live since January 2020) a communication protocol (labelled as SCSN) in cooperation with various manufacturers\footnote{\url{https://smartindustry.nl/fieldlabs/8-smart-connected-supplier-network}}\footnote{\url{https://www.brainportindustries.com/nl/berichten/maakindustrie-aan-de-slag-met-digitalisering}}. This communication standard enables manufacturers to share various production parameters (data) in an easy manner, whilst the manufactures remain to be able to use their own ERP\footnote{\url{https://en.wikipedia.org/wiki/Enterprise_resource_planning}} system, which is preferred by manufacturers due to various reasons (legacy purposes, proprietary software, vendor lock-ins, etc.). The SCSN protocol is introduced as it assures that companies do not need to 'give up' their own dedicated ERP systems, whilst being enabled to share data with other manufacturers (cross ERP). Thus, systems might communicate via live data connections or by means of backlogs, where on a daily night backlogs are loaded into systems (by using csv file containers for instance).
-Interviews conducted with the research department of TNO revealed that the main issue currently faced by these organizations, is scaling up the system and determining the level of information sharing for an optimum improvement of the supply chain. A strong point of attention however remains the correct implementation of units inside the data sharing facility as not only the units themselves can differ, but the way that the same unit is used in a system can also differ.
+\subsection{Integrating ERP Systems}
+Co-currently the Dutch research institute TNO is currently developing (test version live since January 2020) a communication protocol (labelled as SCSN) in cooperation with various manufacturers\footnote{\raggedright\url{https://smartindustry.nl/fieldlabs/8-smart-connected-supplier-network}}\footnote{\raggedright\url{https://www.brainportindustries.com/nl/berichten/maakindustrie-aan-de-slag-met-digitalisering}}. This communication standard enables manufacturers to share various production parameters (data) in an easy manner, whilst the individual manufactures remain to be able to use their own ERP\footnote{\raggedright\url{https://en.wikipedia.org/wiki/Enterprise_resource_planning}} system, which is preferred by manufacturers due to various reasons (legacy purposes, proprietary software, vendor lock-ins, etc.). The SCSN protocol is introduced as it assures that companies do not need to 'give up' their own dedicated ERP systems, whilst being enabled to share data with other manufacturers (cross ERP). Thus, systems might communicate via live data connections or by means of backlogs, where on a daily night backlogs are loaded into systems (by using csv file containers for instance).
 
+Interviews conducted with the research department of TNO highlighted that upon implementation of ERP systems one of the main considerations is measurement units in general. The correct implementation of units inside the data sharing facility is such a key aspect, as not only the units themselves can differ, but the way that the same unit is used in a system can also differ; the unit representation. The research done by TNO highlights the importance of unit conversion, but also understand what the unit stands for.
 
-\subsection{Libraries}
-    \subsubsection{Unit Conversion} Unit conversion is not a new thing, even the basic Windows calculator will be able to convert units. Multiple libraries for Python have been written, such as PintPy\footnote{https://pint.readthedocs.io/en/0.11} or the 'unit-converter' from PyPi\footnote{https://pypi.org/project/unit-converter}. These libraries allow users to convert units, but only when the actual number is accompanied by a certain subset of information; the information needs to be supplied in a certain way. Thus this means, we need pre-processing steps. Not only does this create an unnecessary influx of data to be transmitted between nodes, but it also requires additional computation time to be used, burdening the system potentially unnecessary.
+\subsection{Python Libraries}
+\subsubsection{Unit Conversion} Unit conversion is not a new thing, even the basic Windows calculator is able to convert units. Multiple libraries for Python\footnote{\raggedright{\url{https://www.python.org/}}} have been written, such as PintPy\footnote{\raggedright\url{https://pint.readthedocs.io/en/0.11}} or the 'unit-converter' from PyPi\footnote{\raggedright\url{https://pypi.org/project/unit-converter}}. Pypi actually hosts many libraries for unit conversion, hereunder a subset of library packages performing unit conversion, all named very equally:
+\begin{itemize}
+    \item {Unitconvert\footnote{\raggedright{\url{https://pypi.org/project/unitconvert/}}}}
+    \item {Unit-convert\footnote{\raggedright{\url{https://pypi.org/project/unit-convert/}}}}
+    \item {Unit-converter\footnote{\raggedright{\url{https://pypi.org/project/unit-converter/}}}}
+    \item {Unit-conversion\footnote{\raggedright\url{https://pypi.org/project/unit-conversion/}}}
+\end{itemize}
 
-\subsubsection{Other used units}
-To lessor extent Workdays are also a known issue in computer management. Excel offers the function 'workday'\footnote{https://support.office.com/en-us/article/workday-function-f764a5b7-05fc-4494-9486-60d494efbf33}, for example. For Python there is a library for 'workdays' as well\footnote{https://pypi.org/project/workdays}, just as the package 'businesshours'\footnote{https://pypi.org/project/BusinessHours}.
+%These libraries allow users to convert units, but only when the actual number is accompanied by a certain subset of information; the information needs to be supplied in a certain way. Thus this means, we need pre-processing steps. Not only does this create an unnecessary influx of data to be transmitted between nodes, but it also requires additional computation time to be used, burdening the system potentially unnecessary.
+The above list is slightly confusing as to how the name giving has taken place. Especially when writing code one could easily confuse the packages, as actually happened to myself upon making this report. The names are so similar, that also referring to online manuals can lead to the wrong solution, without you as a programmer realizing that you are actually looking at the wrong website. To add to the confusion all libraries have their own specific way of dealing with unit conversion. Some require additional data subsets to be added, some in one way some in another way further complicating implementation. This all makes it quite confusing to what can be expected and how the data needs to be given in order to get it converted in the right way.
 
-\subsection{Current Gap in the Market}
-The currently available methods allow for either standard units to be converted, e.g.; kilograms to grams, Fahrenheit to Celsius and so on. These are physical units and are important, but as mentioned previously, these are not the only units that are being used within manufacturing and supply chain management.
-The 'workday' and 'businesshours' libraries as currently available on their part do not allow to convert units. 
+\subsection{Complexity}
+The essence of unit conversion is actually not a hard concept; you take a number and then convert it according to the formula which is a known static variable (or formula, as we will see later in this paper). The issue is that there are many units, and they can all occur between each other within ERP systems. When automatically submitting an order from company A to company B, this might lead to all sorts of issues. It becomes apparent that this is (one of the main) reason(s) why various initiatives (such as SCSN) are struggling with up-scaling their potential market, as companies are not fully in trust of such a system (yet).
 
-The aim of this research therefore is to provide a possibility in which these two important items can be combined into one, thus providing an incremental improvement for the overall research of combining the various ERP systems.
-
-
+%\subsubsection{Same abbreviations}
+%A complex aspect of units is inherent to the vast majority of measurements in our physical world, combined with the amount of unit systems this leads to a situation in which abbreviations are re-used for multiple units. For instance,  
 
 \section{Research}
-The framework of this research is having multiple ERP systems combined, as the SCSN network is attempting to achieve.
+The framework of this research is discovering the current status of the Python libraries and propose an alternative solution. The ERP systems are hypothesized to be csv files which will be combined, similar to what the SCSN network is attempting to achieve.
 
 \subsection{Aim}
-This research is aimed to highlight the importance of identifying the need to convert a wide range of varied units, represented in various data sources. By performing a performance test we will be evaluating the impact of combining various units into a single large tabulation.
+This research is aimed to highlight the importance of identifying the need to convert a wide range of varied units, represented in various data sources when combining these sources. By displaying the limitations of various Python library packages, we will discover the current status of Python libraries when it comes to unit conversions. An alternative, own proposed method will also be designed.
+
+\subsection{Relation to Big Data: Variety}
+The angle of approach for the current paper is designed around the 'variety' aspect of the Big Data set of V's. The question how to reduce variety of units, which can potentially lead to all sorts of practical problems (losing a satellite in space) is key and as a result we will also notice what impact all these various units (together with the usage of the library packages) will have on translation speeds. This leans a bit towards the V of 'velocity', a logical consequence as more variety leads to less available computation power. The main focus however remains to be on 'variety'.
+
+\subsection{Relation to Data Science Methods}
+Data scientist often use statistical methods in order to test certain hypothesis, such as calculating the mean or median. Especially in the field of data science, variations in numbers can push the research into the wrong direction. By removing a fundamental reason why numbers can differ (different units) we can further improve the field of data science and improve future researches.
 
 \subsection{Research Question}
 During this research I would like to answer the following question:
 \begin{itemize}
-    \item{How do we combine various units and translate them into a single unit representations into a large datacluster using Python libraries?}
+    \item{How do we combine various units and translate them into a single representative unit system?}
 \end{itemize}
 
-With sub questions:
+The following sub questions will also become part of the research:
 \begin{itemize}
-	\item{Which type of data variables do we want to align in the current scope?}
-    \item{Which possible inputs can we expect?}
-    \item{Which problems might arise during the scale-up of the system?}
+    \item{What is the current level of the python libraries?}
+%\item{Which type of data variables do we want to align in the current scope?}
+    \item{What solutions can be applied?}
+    \item{How is the implementation of current existing solutions?}
+%    \item{Which possible inputs can we expect?}
+    \item{Which pre-cleaning steps are required?}
+%    \item{Which problems might arise during the scale-up of the system?}
 \end{itemize}
 
-\begin{itemize}
-    \item{How should we pre-clean the data entries?}
-\end{itemize}
-
-
-
-
-
+%%As a bonus section I will introduce a part on how to clean the data entries, which can lead to a reduction in required computational power. But as this leans on 'velocity' this will remain a bonus section for now, depending on how the availability of time.
+%%\begin{itemize}
+%%    \item{How should we pre-clean the data entries?}
+%%\end{itemize}
 
 
 \section{Method}
-By automating the processing of data entries, we can minimize the human efforts required (and all issues that might arise from this). In order to automate we need to set up a 'translation list' of conversions between Imperial (US) and Metric (SI) units. Furthermore we need to assure that users provide an input for the translation program to understand which unit is used, in order to translate it to the correct conversion.
+%\subsection{Standard list of units}
+%By automating most of the data generation  processing of data entries, we can minimize the human efforts required (and all issues that might arise from this). In order to automate we need to set up a 'translation list' of conversions between Imperial (US) and Metric (SI) units. Furthermore we need to assure that users provide an input for the translation program to understand which unit is used, in order to translate it to the correct conversion.
 
-By storing all the inputs into a standard (metric by preference) system, we are assured that all information as stored into this system follows one standard unit system. Output conversions must than occur in case this is needed.
+%By storing all the inputs into a standard (metric by preference) system, we are assured that all information as stored into this system follows one standard unit system. Output conversions must than occur in case this is needed.
 
-Furthermore I would like to discuss how the scaling up of this system would occur and which issues might arise. For instance, what parts of this data process can we perform on a cluster of computers and which not?
+%Furthermore I would like to discuss how the scaling up of this system would occur and which issues might arise. For instance, what parts of this data process can we perform on a cluster of computers and which not?
 
-Lastly I would also like to test whether more procedures can be written to assure that data input is separated accordingly (string conversions, data variable type conversions). This might lead to an extensive exercise, which in itself can be a complete paper so this one I would like to keep for the last part and see more as a bonus section if there is sufficient time left.
+%Lastly I would also like to test whether more procedures can be written to assure that data input is separated accordingly (string conversions, data variable type conversions). This might lead to an extensive exercise, which in itself can be a complete paper so this one I would like to keep for the last part and see more as a bonus section if there is sufficient time left.
 
 \subsection{Data Sources}
-For this research I will use a self-generated dataset upon which the introduced method will be tested.
+For this research I will use a self-generated dataset upon which the introduced method will be tested. The dataset is generated using Microsoft Excel\footnote{\raggedright{\url{https://www.microsoft.com/en-us/p/excel/cfq7ttc0k7dx?activetab=pivot\%3aoverviewtab}}} as it enables us to generate random numbers rather quickly, and convert them to a set of datatypes.
+
+
+\subsection{Filetype}
+For the current implementation the popular csv format\footnote{\raggedright{\url{https://en.wikipedia.org/wiki/Comma-separated_values}}} is used. The csv format can be used on both Windows and Unix based systems and is recognized by most database software packages. Famous ERP packages such as Baan, SAP and Oracle also accept csv formats. The popularity does not only end there, as the Pandas library also supports csv files. 
+The only negative side is that csv files do not support live-transmission of data, as they are export files of the complete database (thus they first need to be generated). However for the goal of this research this is not important, as the focus lies on unit conversion.
+
+
+%\subsection{Dataset and Personal Experience}
+%The dataset will be generated based upon personal experience from working with an ERP system which used the ASML products. The dataset therefore contains the ASML product part number system labelled '12NC'\cite{de2015accelerating}. This identifier is unique per each specific product, from small items such as rings and screws to large items like complete machines. This provides us with a unique feature to interlink the items within the dataset, which comes in hand when we want to verify whether the implemented method actually works.
 
 \subsection{Unit Types}
 For the current research I will solely focus on the application of the following units:
 \begin{itemize}
-    \item 
+    \item{Temperatures}
+    \item{Mass}
+    \item{Distance}
+\end{itemize}
+There is sufficient differences in these units in order to draft up a complex study, highlighting the differences of unit systems and complexities involved in converting them.
+
+\subsection{One Unit System}
+The proposed solution will align all units to be represented in one unit system; this is the international recognized SI system\footnote{\raggedright{\url{https://en.wikipedia.org/wiki/International_System_of_Units}}}.
+
+\subsection{Python}
+The proposed solution is designed using the Python language\footnote{\raggedright{\url{https://www.python.org/}}} is used as it allows us to work with various libraries as described under the relevant work section.
+\subsubsection{IDE}
+The program will be written in the IDE\footnote{\raggedright{\url{https://en.wikipedia.org/wiki/Integrated_development_environment}}} Visual Studio Code\footnote{\raggedright{\url{https://code.visualstudio.com/}}} using the add-in package\footnote{\raggedright{\url{https://marketplace.visualstudio.com/items?itemName=ms-python.python}}} which provides additional usage of Python within Visual Studio Code. By using the Jupyter Notebooks\footnote{\raggedright\url{https://jupyter.org/}} format, a interactive interpreter is created which is very suitable to quickly build programs. Support for Jupyter is integrated in Visual Studio Code upon installation of the Jupyter environment on the computer system.
+
+\subsubsection{Libraries}
+The following Python libraries will be continuously used in the testing and when designing a solution:
+\begin{itemize}
+    \item{Pandas\footnote{\raggedright{\url{https://pandas.pydata.org/}}}}
 \end{itemize}
 
+\subsection{Testing Existing Libraries}
+By testing how a standard csv file can be imported and how units in the csv file can be converted, it will become clear what the current status quo is. 
+
+The following Python libraries will be tested:
+\begin{itemize}
+    \item{PintPy\footnote{\raggedright{\url{https://pint.readthedocs.io/en/0.11/}}}}
+    \item{PiPy: Unit-convert\footnote{\raggedright{\url{https://pypi.org/project/unit-convert/}}}}
+    \item{PiPy: Unit-converter\footnote{\raggedright{\url{https://pypi.org/project/unit-converter/}}}}
+\end{itemize}
+
+Each library will be evaluated on the following points:
+\begin{itemize}
+    \item How does it work?
+    \item Did any error occur?
+    \item Solutions of error prevention and consequences
+    \item Conclusion
+\end{itemize}
+
+Please refer to the appendix for an elaborate analysis of these libraries, how they work and what limitations there are. This includes actual Python code, in case the reader wants to implement these libraries themselves.
 
 
-\section{Upscaling}
+\subsection{Design Own Method}
+As the libraries are limited in their own way, I will also discuss a proposed solution to work around the limitations. In essence I will design an alternative solution to performing unit conversion using Python.
 
-%\subsection{Adding New Manufacturers}
-%interviews with ERP suppliers
-%Manufacturers currently need to inform how they use it
-%alignment of variables needs to be done
-%specific for each client
-%bad because takes time
-%good because it assures clean alignment between intended (intended!) variable usage from all ERP systems
+\subsection{Scope and Limitations}
+This research is a mere introduction to the vibrant world of (measurement) units and is intended to highlight the importance of unit alignment.
+There are for instance differences between UK (Imperial) and US (Customary) units\footnote{\raggedright\url{https://en.wikipedia.org/wiki/Comparison_of_the_imperial_and_US_customary_measurement_systems}}, even though they use very similar notations (to add to the confusion). I will however not dive extensively deep into this topic as it does not add much to the model itself, it's a mere iteration of an existing situation and thus 'just another conversion'.
 
-%\subsection{Synchronizing Data}
-%When combining various data sources we will run into synchronicity issues. A master has to control all versions, delays and what do we do when the master dies? It's a single node
+Furthermore this research will not try to optimize and reduce the computational cycles as required in order to transform units, as this would transform the research more into reviewing this unit issue from the big data perspective of 'velocity' oppose to the intended 'variety'.
+
+
+\section{Implementation}
+
+\subsection{Requirements}
+The self generated dataset will contain the measurement parameters and unit representation inside the dataset. This allows us to build datasets quickly, and allows normal users to change the unit quickly in case someone types the wrong unit accidentally. This also clarifies the unit in place and displays what the data represents.
+
+We also want our database solution to work dynamically, as we are connecting databases. Normally we would not change units in our databases quickly, however this potentially can occur, especially if we were to design a centralized system, similar to the SCSN network (which works as a 'translator' between two companies, and thus is faced with different units from time to time). 
+
+
+\subsection{Own method}
+Below is my proposed solution. I have followed the main questions as with the other libraries and have added additional information afterwards, in which I highlight the specifics which need to be taken into account when dealing with various number formats, data types and unit conversions.
+
+\subsubsection{How does it work?}
+By importing the csv files, we can fill up a pandas \textit{DataFrame} \footnote{\raggedright{\url{https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.html}}}
+tabulation rapidly. This imported data is not useful as long as we do not know what it represents. This is recorded in the 'metadata', which describes for instance 'this column has temperatures in Celsius'. The proposed method requires datasets to contain this information explicitly, which can than be imported and automatically will populate the 'metadata' of the pandas DataFrame.
+As the databases are in csv format, which can be read and edited by most software, this system allows a user-friendly solution, where normal users are also able to understand (and adjust if required) what is understood to be represented in a database by the computer program.
+
+%% Main code
+\subsubsection{Did any error occur?}
+Initially yes, as not all units are simple conversions (multiple, divide) it was not as simple to simply use one numerical amount. Furthermore no real issues were encountered.
+
+\subsubsection{Solutions of error prevention and consequences}
+By using a lambda \footnote{\raggedright{\url{https://en.wikipedia.org/wiki/Anonymous_function}}} function in a dictionary I was able to solve the calculation of Celsius - Fahrenheit.
+
+\subsubsection{Conclusion: Benefits over using existing libraries}
+The proposed solution designed by author has a few benefits over the libraries as tested previously. The main benefit is the introduction of being able to import customize-able dictionaries
+
+% Write algorithm
+
+
+\subsection{Using a dictionary for the application of unit conversions}
+By using a dictionary we can make a 'dynamic' work space, in which we can set unit conversions whilst not interfering with the actual code. This can be handy when we want to adjust the field of units we want to use and we would like novice users to be able to adjust these as well.
+
+
+%% Convert units from dict code
+
+
+\subsection{Unit conversion numbers and formulas}
+As described previously not all conversions are (unfortunately) simple multiplications or divisions. We have to sometimes fill in complete formulas. Please refer below to the dictionary algorithm, which is able to solve both formulas and 'simple' conversions. The line numbers 7 to 9 display such showcases (they use the function lambda). In the appendix the actual Python code can be found for this algorithm.
+
+\begin{algorithm}%%[H]
+\caption{Convert Units using multiplication or formulas}
+\SetAlgoLined
+\DontPrintSemicolon
+i = importvalue\;
+\eIf{i not in dictionary}{
+display errormessage\;
+}{
+x = i from dictionary\;
+    \eIf{x is number}{
+    multiply x with data\;
+    }{
+    apply formula x to data\;
+    }
+}
+\end{algorithm}
+
+%% LIBRARY code
+
+
+\subsubsection{Customizable Unit Transform Dictionaries}
+Programming is a specialty not managed by everybody. By implementing multiple functions which can import and use a customize able translation lists, we allow people who do not master programming to also use the software. The benefit of this, is that we can tailor make translations lists of units, in order to assure we only use those units which will actually occur.
+
+The proposed system uses csv files for the import of unit lists. The benefit of this, is that many programs can read and edit csv files; such as windows notepad, but also powerful software like Microsoft Excel. These programs are very general used software packages, which are installed on many computers and thus this allows also non-programmers to check whether the implemented translation list is actually correct.
+
+
+%% Import CSV PSEUDO CODE
+
+\begin{algorithm}
+\caption{Import CSV dictionary}
+\SetAlgoLined
+\DontPrintSemicolon
+    r = csvfile(delimiter =';')\;
+    dictionary = empty\;
+    \For{key, value in r}{
+    dictionary.add[key] = value\;
+    }
+\end{algorithm}
+
+
+
+\subsection{Pre-cleaning of data; assuring numeric data types, assure dots presented as commas, perform numeric conversions}
+Sometimes a number displayed on the screen is not actually represented in computer memory as a number. If we want to perform calculations on numbers, we need to be sure that the imported data actually contains number data types for the computer to be able to interpret them correctly. A function was designed which will clean up the input data:
+
+\begin{itemize}
+    \item Checks input type
+    \item Assure dots; '.'
+    \item Strings get converted to floating points
+    \item Returns float type or error
+\end{itemize}
+
+%% cleanup_data_values_return_float(data_in)
+
+\subsubsection{Check input type}
+The program identifies whether a Boolean datatype is detected, which can potentially occur in a product database (or technical documentation for that matter), for instance when we specify whether a certain future is included in the product design. Therefore this line has intentionally been added in this code.
+
+In the future we could add more data types, such as lists, tuples or dictionary data types or other objects. This would assure a dummy proof solution, but this seems passing by the idea of the current exercise as this would be simply copy existing lines and does not add to the proposed method, but merely expands it to make it more dummy proof (but also less universal).
+
+\subsubsection{Assure dots; ’.}
+Dots and commas are common in numbers and can become confusing when comparing international number formatting. There are thousand separators, designed to make it easier for people to read numbers, but there are also decimal separators \footnote{\raggedright{\url{https://en.wikipedia.org/wiki/Decimal_separator}}}, which are part of a number. We are only interested in the decimal separator, as it really says something about the number (2,01 is something else than 201). It is therefore evident we do not simply throw away the dots and commas but convert them to the system we prefer.
+
+\begin{algorithm}%%[H]
+\caption{Pre-clean data}
+\SetAlgoLined
+\DontPrintSemicolon
+x = data\;
+\eIf{x is boolean}{
+display boolean errormessage\;
+}{
+    \If{x is string}{
+        x = x.replace( , to . )\;
+        \If{. in x > 1}{
+        remove all . except 1\;
+        }
+    }
+make x to float datatype\;
+}
+\end{algorithm}
+
+
+
+\subsubsection{Versatility Through Simplicity}
+The real power of the proposed solution is the simplicity. By allowing dictionaries in the csv format to dictate the conversions of units, this solution allows users the freedom to adjust which conversions are really required. As the dictionary keys are required to align with the database headings of columns, this creates a double verification whether the correct unit is in place. By the definitions used in the dictionary, mistakes are reduced as the user has to write down each individual conversion as: 
+
+
+\begin{minted}
+[
+frame=lines,
+framesep=2mm,
+baselinestretch=1.2,
+fontsize=\footnotesize,
+linenos,
+breaklines=true
+]{python}
+            [subject] [unit_system] [unit]
+\end{minted}
+
+%% https://en.m.wikipedia.org/wiki/IEEE_Std_260.1-2004?wprov=sfla1
+% Further issues for the future
+%\section{Upscaling}
+
+\section{Evaluation}
+
+\subsection{Adding New Manufacturers}
+When adding new manufacturers we need to be careful with the implementation process. The proposed system relies heavily on the usage of dictionaries, as the system provides us the freedom to do as we wish and we are even in the possibility to produce separate dictionaries for individual suppliers, as the code has been written cleanly and allows us to do so (we can re-use the same functions for multiple dictionaries). Please refer to the appendix for the actual code.
+
+\subsubsection{Implementation process}
+The alignment of variables is a strict requirement upon implementation. This can be achieved by adjusting the metadata inside the csv files, as these describe what each column actually represents. The negative side is that this has to be done specifically for each client which is time intensive. This however is not necessarily bad, as it does assure clean and proper alignment of variables and their representations over all ERP systems.
+
+\subsection{Synchronizing Data}
+When combining various data sources we will run into synchronicity issues. A master has to control all versions, delays and what do we do when the master dies? It's a single node
 
 %\subsection{Assuring Data Integrity}
 %Assure that values are actually what they should be
-
-\section{Future Work}
-%Comparison of US and UK Imperial units
-%% https://en.wikipedia.org/wiki/Comparison_of_the_imperial_and_US_customary_measurement_systems
+%%
 
 \section{Discussion}
+
+\subsection{Computer Imprecision}
+By design, computers are not able to understand numbers and what they mean. Therefore, computers are always slightly inaccurate. This is because of the difference between how humans calculate (using a 10 base number system), and how computers calculate (using a 2 number base system). This is 'caused' by the IEEE 754 standard \footnote{\raggedright{\url{https://standards.ieee.org/standard/754-2019.html}}} used deep inside the hardware technogloy in computers. Please refer to the below to see the effect:
+
+\begin{minted}
+[
+frame=lines,
+framesep=2mm,
+baselinestretch=1.2,
+fontsize=\footnotesize,
+linenos,
+breaklines=true
+]{python}
+
+# Notice the strange output
+x = 0.1 + 0.2
+print(x)
+# Output:
+0.30000000000000004
+\end{minted}
+
+\subsubsection{Importance to this database}
+This imprecision has its effect on the database, especially as we are converting numbers and need to be sure about what we read and it's correctness.
+
+\subsubsection{Solving Computer Number Imprecision}
+Dealing with this computer uncertainty creates additional programming requirements. By implementing additional code one can verify whether this is a neglect able difference. There are multiple solutions, such as using the 'decimal' datatype or compare differences where the result is calculated and compared to an arbitrary number.
+
+The negative side is that this will require more computational counts, and thus reduces the system's processing speeds.
+
+\subsection{Human Factor}
+By using one unit system, we still don't prevent people from entering the wrong unit conversion. By using csv files (accessible through various office software packages) we do limit input locations, but it still allows the human factor to create potential hazards. An alternative solution is applied by the Python library package PintPy, which allows the numbers to represent a property in the programming code. This means that there is a 'check' by the computer code to verify whether the unit actually is aligned with the other unit. This should prevent these issues from arising, however as discussed in the test, PintPy comes with it's own negative sides.
+
+\subsection{Other Units Used in Supply Chain}
+When considering a supply chain of manufacturers we should not disregard the existence of other units than technical or physical units, which are important but more from a engineering perspective. Supply chain planning revolves mainly around allocating resources efficiently. Various researches \cite{graves1998dynamic}\cite{sarkar2016supply} have focused on issues such as:
+\begin{itemize}
+    \item{Work shifts with various hourly rates}
+    \item{Discount policies}
+    \item{Production times}
+    \item{Ordering quantities}
+\end{itemize}
+
+The main point to take from this is that products or units can be reflected differently in various systems; when we order 'a box of screws Z' from company A instead of company B, the actual quantity included inside the box can differ, or the delivery time can differ to that we would have expected. An important point to address when integrating supply chains, as ordering items is one of the key tasks in supply chain management.
+
+\subsubsection{Different Representation of Units Across Variables}
+ERP systems can be a mess when looking at how the same unit is represented for different variables. From personal experience I know that the ERP system which my employer utilized (Baan IV\footnote{\raggedright\url{https://www.xibis.nl/producten/baanivenv}}) contained different representations of the same unit for different parameters, such as with days and (again) package units. As an example; delivery times would be represented in calendar days whilst production times would be represented in work days. When integrating the various ERP systems, such differences cannot be ignored and have to be unified as well.
+
+\subsubsection{Existing Solutions for Workdays}
+To lessor extent Workdays are also a known issue in computer management. Excel offers the function 'workday'\footnote{\raggedright{\url{$https://support.office.com/en-us/article/workday-function-f764a5b7-05fc-4494-9486-60d494efbf33$}}}, for example. For Python there is a library for 'workdays'\footnote{\raggedright{\url{https://pypi.org/project/workdays}}} as well, just as the package 'businesshours'\footnote{\raggedright{\url{https://pypi.org/project/BusinessHours}}}. These libraries are necessary when we want to calculate the 'earliest shipping time' as commonly used in the field of supply chain.
+
+
+
+\section{Future Work}
+
+\subsection{Limitations of Current Market}
+The currently available methods allow for either standard units to be converted, e.g.; kilograms to grams, Fahrenheit to Celsius and so on. These are physical units and are important, but as mentioned previously, these are not the only units that are being used within manufacturing and supply chain management.
+
+The 'workday' and 'businesshours' libraries as currently available on their part do not allow to convert units. 
+
+There is no research conducted yet in which these two important items can be combined into one, by applying both packages on a single tabulation, thus providing an incremental improvement for the overall research of combining the various ERP systems.
+
+
 
 
 %%
@@ -187,23 +453,325 @@ To Hannes Mühlheisen, for the fun and joy during the lectures and for setting u
 %% If your work has an appendix, this is the place to put it.
 \appendix
 
+\section{Testing Existing Methods}
+
+
+\subsection{PintPy}
+\subsubsection{How does it work?}
+Pintpy appears to be a very powerful, rich library. It can verify whether the intended output unit actually represents the same measurement as the output unit (temperature unit in means the output unit also needs represent a temperature).
+
+%% PintPy code
+\begin{minted}
+[
+frame=lines,
+framesep=2mm,
+baselinestretch=1.2,
+fontsize=\footnotesize,
+linenos,
+breaklines=true
+]{python}
+
+
+import pint
+ureg = pint.UnitRegistry()
+
+# PintPy Input:
+(2 * ureg.meter + 2 * ureg.ft)
+# Output: 
+<Quantity(2.6095999999999999, 'meter')>
+\end{minted}
+
+PintPy is mainly designed to sum two unit systems and immediately convert them to one unit. The library can be tricked by summing a '0' amount of the desired output unit system to the actual input unit amount.
+
+% PintPy Solution Code
+\begin{minted}
+[
+frame=lines,
+framesep=2mm,
+baselinestretch=1.2,
+fontsize=\footnotesize,
+linenos,
+breaklines=true
+]{python}
+
+# Fool PintPy with this input:
+(0 * ureg.meter + 2 * ureg.ft)
+# Output: 
+<Quantity(0.6095999999999999, 'meter')>
+\end{minted}
+
+
+\subsubsection{Did any error occur?}
+Despite it's vast set of unit systems, multiple errors occurred. The library misinterpreted some units, resulting in confusing error messages. Furthermore the system requires you to specify the units inside the code, which requires programmers to understand which units are being used.
+
+\subsubsection{Solutions of error prevention and consequences}
+This is where this library really shows it's negative side. The syntax requires hardcode programming the unit of a variable (such as a column in a tabulation). This means that we cannot dynamically change the unit, thus it is not very suitable unless we expect our personnel to all understand programming, and are comfortable with everybody being able to change the code!
+
+A solution to this could be to write special functions that retrieve the correct attributes for PintPy or add dictionary values to supply the correct corresponding attributes into PintPy. This is certainly feasible but would result in multiple translations, as we first have to translate our input unit to a unit that is understood by the package, and vice versa. It is definitely a possibility and is not to be ruled out from future work, however preference was given to write an alternative solution as PintPy does not suit our 'freedom to choose input and output conversions easily' desire.
+
+\subsubsection{Conclusion}
+The programming library requires the programmer to understand which units he is converting, as the syntax demands unit coding. An alternative would be to integrate multiple functions to translate units to the correct unit for the PintPy program, or retrieve the correct attributes. As these alternative solutions would not yield a clean code experience, I consider it the main issue with this (otherwise) suitable package.
+
+\subsection{PiPy: Unit-convert}
+PiPy is a very simple to understand library which seems to imitate what PintPy does. It can combine two items and converts them into another unit, so it can take multiple units at the same time. This is a promising library as this potentially allows us to do complex conversions at the same time.
+
+\subsubsection{How does it work?}
+The syntax is similar to PintPy, yet slightly more natural to interpret, as the desired output is on the last part of the code line.
+
+%% PiPy: Unit-convert
+\begin{minted}
+[
+frame=lines,
+framesep=2mm,
+baselinestretch=1.2,
+fontsize=\footnotesize,
+linenos,
+breaklines=true
+]{python}
+
+from unit_convert import UnitConvert
+# yards and kilometers are inputs, converted to miles
+UnitConvert(yards=136.23, kilometres=60).miles
+# Output
+37.3597678005
+\end{minted}
+
+
+\subsubsection{Did any error occur?}
+Yes, my first test of the temperature variable was not recognized as a measurement type. This surpsrised me a lot and I discovered that this library actually only converts data (computerstorage), time, distance and mass.
+
+\subsubsection{Solutions of error prevention and consequences}
+This would require adjusting the library itself, which in essence does not provide a 'off-the-shelf' solution. Furthermore it suffers from the same problem as PintPy, where it requires the programmer to hardcode the desired units inside the code (loosing versatility).
+
+\subsubsection{Conclusion}
+This is a limited library and not suitable for any complex implementation.
+
+
+
+\subsection{PiPy: Unit-converter}
+\subsubsection{How does it work?}
+Unit-converter allows us to specify exactly the specific scientific notation of units. This is really suitable to be applied in scientific situations, where often data is accompanied by the scientific notation.
+
+\subsubsection{Did any error occur?}
+Yes, this library actually exposed many issues with unit notation. As the example code shows, the library expects temperatures to be accompanied by a special character: °C for Celsius. Unfortunately the program does not accept any other notation for temperature scales (Fahrenheit also succumbs this annotation requirement).
+
+
+%% PiPy: Unit-converter code
+%% PiPy Unit-converter
+\begin{minted}
+[
+frame=lines,
+framesep=2mm,
+baselinestretch=1.2,
+fontsize=\footnotesize,
+linenos,
+breaklines=true
+]{python}
+
+from unit_converter.converter import convert, converts
+# The special character ° is required
+converts('52°C', '°F')
+# Output, but which unit?
+'125.6'
+\end{minted}
+
+
+\subsubsection{Solutions of error prevention and consequences}
+The issue with the character requirement originated from the csv file exported from Excel. When using the standard CSV format in Excel, it is not encoded in 'UTF-8', required in order to add this special character. After implementing this additional character, errors occurred in other parts of the code but this could be overcome. The question becomes how versatile this software is in order to use it in multiple solutions.
+
+\subsubsection{Conclusion}
+This library is not useful for mass implementation due to the requirements for special characters, which can suddenly lead to errors.
+
+\underline{String format:} Additionally I would like to highlight that the library requires parameters in the string format. String formats are very versatile as they can represent any type of value and thus also are heavy data containers from a memory perspective. The aim for this research is not about memory space or computational speed but as this case is so excessive it is worth pointing out.
+
+\section{Code of the proposed method}
+
+I will clean up this section for the final hand-in.
+
+In general:
+\begin{itemize}
+    \item Import conversion csv for dictionary
+    \item Option to create hardcoded conversion dictionary
+    \item Convert units using dictionaries
+    \item Import database csv and shape dataframe
+    \item Cleanup all imported values
+    \item Convert values
+\end{itemize}
+
+
+%% Import CSV
+\subsection{Import conversion csv for dictionary}
+
+\begin{minted}
+[
+frame=lines,
+framesep=2mm,
+baselinestretch=1.2,
+fontsize=\footnotesize,
+linenos,
+breaklines=true
+]{python}
+
+import csv # Read csv to Dictionary
+reader = csv.reader(open('unit_conversions.csv', 'r'), delimiter=';')
+dict_unit_csv = {} # start with empty dictionary
+for k, v in reader:
+    dict_unit_csv[k] = v # add key and value to dict
+\end{minted}
+
+
+
+\subsection{Option to create hardcoded conversion dictionary}
+
+%% Library Code
+\begin{minted}
+[
+frame=lines,
+framesep=2mm,
+baselinestretch=1.2,
+fontsize=\footnotesize,
+linenos,
+breaklines=true
+]{python}
+
+# Self-made hardcoded dictionary
+dict_unit_hardcoded = {
+    # Distance to Meter (SI) using * multiplication to go to SI
+    'distance_SI_km':0.001, # kilometer
+    'distance_SI_m':1, # meter
+    'distance_SI_cm':100, # centimeter
+    'distance_SI_mm':1000, # millimeter
+    'distance_USCS_mi.':1609.344, # miles
+    'distance_USCS_ft':0.3048, # feet
+    'distance_USCS_in':0.0254, # inch
+    # Volume to Liter (SI) using * multiplication to go to SI
+    'volume_USCS_cu_in':0.016387064, # cubic inch
+    'volume_USCS_cu_ft':28.316846592, # cubic feet
+    'volume_USCS_cu_yd':764.554857984, # cubic yard
+    'volume_USCS_bbl':158.987294928, # oil barrel
+    'volume_SI_L':1, # Liter
+    # Temperatures, note the lambda function
+    'temperatures_USCS_°F': lambda x : ((5/9) * (x - 32)), # Fahrenheit to C
+    'temperatures_USCS_F': lambda x : ((5/9) * (x - 32)), # Fahrenheit to C
+    'temperatures_SI_°K': lambda x : (x - 273.15), # Kelvin
+    'temperatures_SI_K': lambda x : (x - 273.15), # Kelvin
+    'temperatures_SI_°C': 1, # Celsius
+    'temperatures_SI_C': 1, # Celsius
+    # Weights
+    'mass_USCS_lb': 0.45359237, # Pounds
+    'mass_SI_kg': 1, # Kilogram
+    'mass_SI_g': 1000, # grams
+}
+\end{minted}
+
+\subsection{Convert units using dictionaries}
+
+%% Convert units from dict
+\begin{minted}
+[
+frame=lines,
+framesep=2mm,
+baselinestretch=1.2,
+fontsize=\footnotesize,
+linenos,
+breaklines=true
+]{python}
+# Make universal dictionary reader for unit conversions
+
+def convert_units_from_dict(dict_to_use, unit_subject, unit_system, unit_specs, data_in):
+    '''
+    Retrieves conversion units from dictionary to be multiplied\n
+    Apply a function in case it is a function\n
+    dict_to_use = dictionary used to retrieve value\n
+    unit_subject = describes the subject of unit, e.g. temperature, length\n
+    unit_system = describes the unit system USCS, Imperial, SI etc\n
+    unit_specs = Specifies the exact unit used
+    '''
+    retrieval_value = unit_subject + '_' + unit_system + '_' + unit_specs
+    if retrieval_value not in dict_to_use:
+        # This will stop the program!
+        raise RuntimeError("Unit "  + retrieval_value + " not found in dictionary. Please update data or dictionary.")
+
+    x = dict_to_use[retrieval_value]
+    if callable(x):
+        return x(data_in) # applies the function as stated in dictionary
+    else:
+        return data_in * x # conversion is not a number, e.g. a function
+\end{minted}
+
+
+\subsection{Import database csv and shape dataframe}
+
+%% Main code
+
+\begin{minted}
+[
+frame=lines,
+framesep=2mm,
+baselinestretch=1.2,
+fontsize=\footnotesize,
+linenos,
+breaklines=true
+]{python}
+
+# Code comes here, needs cleaning up
+
+\end{minted}
+
+
+\subsection{Cleanup all imported values}
+
+%% cleanup_data_values_return_float(data_in):
+\begin{minted}
+[
+frame=lines,
+framesep=2mm,
+baselinestretch=1.2,
+fontsize=\footnotesize,
+linenos,
+breaklines=true
+]{python}
+
+def cleanup_data_values_return_float(data_in):
+    
+    message_error_string = " is the datatype value in database, but it must be a floating point or integer"
+
+    if type(data_in) is bool:
+        raise RuntimeError("Boolean " + message_error_string)
+
+    if type(data_in) is str:
+        data_in = data_in.replace(',','.')
+        if data_in.count('.') > 1:
+            data_in = data_in.replace('.','', data_in.count('.') - 1)
+    
+    try:
+        data_in = float(data_in)
+    except:
+        raise RuntimeError("String " + message_error_string)
+
+    return(float(data_in))
+    
+\end{minted}
+
+
+\subsection{Convert values}
+
+\begin{minted}
+[
+frame=lines,
+framesep=2mm,
+baselinestretch=1.2,
+fontsize=\footnotesize,
+linenos,
+breaklines=true
+]{python}
+
+# Code comes here, needs cleaning up
+
+\end{minted}
+
+
 \end{document}
 \endinput
 %%
 %% End of file `sample-sigchi.tex'.
-
-
-
-1.	What is the problem?
-2.	Why is it interesting and important?
-3.	Why is it hard? (E.g., why do naive approaches fail?)
-4.	Why hasn't it been solved before? (Or, what's wrong with previous proposed solutions? How does mine differ?)
-5.	What are the key components of my approach and results? Also include any specific limitations.
-Also include references to and short description of related work as part of the first chapter. 
-
-
-General criteria:
-•	If you have received feedback from your TA, please make sure you incorporate it accordingly.
-•	Make sure your paper has a concise yet descriptive title.
-•	Make sure your text is logically coherent and arguments follow a clear line. A good way to achieve this is to write down the argument chain first and then turn each link into a sentence of paragraph. 
-•	Make sure you clearly describe the Big Data angle of your approach, which V you address, how traditional approaches fail to address the issue etc.
