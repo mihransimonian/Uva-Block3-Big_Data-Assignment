@@ -1,3 +1,12 @@
 distance_SI_km;0,001
+distance_SI_m;1
 distance_SI_cm;100
 distance_SI_mm;1000
+distance_USCS_mi.;1609,344
+distance_USCS_ft;0,3048
+distance_USCS_in;0,0254
+volume_USCS_cu_in;0,016387064
+volume_USCS_cu_ft;28,31684659
+volume_USCS_cu_yd;764,554858
+volume_USCS_bbl;158,9872949
+volume_SI_L;1

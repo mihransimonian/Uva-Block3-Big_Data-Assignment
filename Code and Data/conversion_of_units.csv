@@ -1,0 +1,21 @@
+distance_SI_km;0,001
+distance_SI_m;1
+distance_SI_cm;100
+distance_SI_mm;1000
+distance_USCS_mi.;1.609
+distance_USCS_ft;0,3048
+distance_USCS_in;0,0254
+volume_USCS_cu_in;0,016387064
+volume_USCS_cu_ft;28
+volume_USCS_cu_yd;765
+volume_USCS_bbl;159
+volume_SI_L;1
+temperatures_USCS_°F;lambda x : ((5/9) * (x - 32))
+temperatures_USCS_F;lambda x : ((5/9) * (x - 32))
+temperatures_SI_°K;lambda x : (x - 273,15)
+temperatures_SI_K;lambda x : (x - 273,15)
+temperatures_SI_°C;1
+temperatures_SI_C;1
+mass_USCS_lb;0,45359237
+mass_SI_kg;1
+mass_SI_g;1000

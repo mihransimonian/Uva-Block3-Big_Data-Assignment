@@ -372,7 +372,11 @@ When combining various data sources we will run into synchronicity issues. A mas
 \section{Discussion}
 
 \subsection{Computer Imprecision}
-By design, computers are not able to understand numbers and what they mean. Therefore, computers are always slightly inaccurate. This is because of the difference between how humans calculate (using a 10 base number system), and how computers calculate (using a 2 number base system). This is 'caused' by the IEEE 754 standard \footnote{\raggedright{\url{https://standards.ieee.org/standard/754-2019.html}}} used deep inside the hardware technogloy in computers. Please refer to the below to see the effect:
+In theory and nature, there are an unlimited amount of numbers possible; a number can have thousands (or many more) of digits behind the comma and ends with a '1'. As computer bits determine the amount of digits we can have in a number, the same rules do not apply as in nature. Due to computer bit precision, numbers can only be represented in computer memory up to a certain precision, resulting in a slightly inaccurate result, or stored variable.
+
+The IEEE 754 standard \footnote{\raggedright{\url{https://standards.ieee.org/standard/754-2019.html}}} used in computers, describes the formats to use for required data precision (for instance, a 64-bit double float precision number variable \footnote{\raggedright{\url{https://en.wikipedia.org/wiki/Double-precision_floating-point_format}}}), but this does not remove the fundamental issue with number representation due to bit limitation.
+
+Please refer to the below to see the effect:
 
 \begin{minted}
 [
@@ -391,13 +395,15 @@ print(x)
 0.30000000000000004
 \end{minted}
 
+%This has to do with the 2base system oppose to 10base system?
+
 \subsubsection{Importance to this database}
 This imprecision has its effect on the database, especially as we are converting numbers and need to be sure about what we read and it's correctness.
 
 \subsubsection{Solving Computer Number Imprecision}
-Dealing with this computer uncertainty creates additional programming requirements. By implementing additional code one can verify whether this is a neglect able difference. There are multiple solutions, such as using the 'decimal' datatype or compare differences where the result is calculated and compared to an arbitrary number.
+Dealing with this computer uncertainty creates additional programming requirements. By implementing additional code one can verify whether this is a neglect able difference, compared to the number calculated.
 
-The negative side is that this will require more computational counts, and thus reduces the system's processing speeds.
+The consequence is that this will require more computational counts, and thus reduces the system's processing speeds.
 
 \subsection{Human Factor}
 By using one unit system, we still don't prevent people from entering the wrong unit conversion. By using csv files (accessible through various office software packages) we do limit input locations, but it still allows the human factor to create potential hazards. An alternative solution is applied by the Python library package PintPy, which allows the numbers to represent a property in the programming code. This means that there is a 'check' by the computer code to verify whether the unit actually is aligned with the other unit. This should prevent these issues from arising, however as discussed in the test, PintPy comes with it's own negative sides.
